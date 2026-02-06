@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحكم ESP8266 العالمي</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
+        .card { background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .btn-on { background: #28a745; color: white; }
+        .btn-off { background: #dc3545; color: white; }
+        .day-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        input[type="time"] { border: 1px solid #ddd; padding: 5px; border-radius: 5px; }
+        .save-btn { background: #1a73e8; color: white; width: 100%; margin-top: 20px; }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>التحكم الذكي (عبر السحاب)</h2>
+    <div class="btn-group">
+        <button class="btn-on" onclick="sendPower(true)">تشغيل الآن</button>
+        <button class="btn-off" onclick="sendPower(false)">إيقاف الآن</button>
+    </div>
+    <hr>
+    <h3>ضبط الجدول الأسبوعي</h3>
+    <div id="schedule-container">
+        </div>
+    <button class="save-btn" onclick="saveSchedule()">حفظ الجدول بالكامل</button>
+</div>
+
+<script>
+    // --- إعدادات Firebase الخاصة بك (ضع بياناتك هنا) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9ZJQ02SyvuapjY_xiz5gtw2PtLFM4-I0",
+     databaseURL: "https://smart-light-dc579-default-rtdb.firebaseio.com",
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const days = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+    const container = document.getElementById('schedule-container');
+
+    // توليد خانات الوقت للأيام
+    days.forEach((day, index) => {
+        container.innerHTML += `
+            <div class="day-row">
+                <span>${day}</span>
+                <div>
+                    <input type="time" id="s${index}" value="08:00">
+                    <input type="time" id="e${index}" value="17:00">
+                </div>
+            </div>`;
+    });
+
+    function sendPower(state) {
+        db.ref('/').update({ ledStatus: state, manual: true });
+        alert(state ? "تم التشغيل" : "تم الإيقاف");
+    }
+
+    function saveSchedule() {
+        let scheduleData = {};
+        for(let i=0; i<7; i++) {
+            scheduleData[`day${i}`] = {
+                start: document.getElementById(`s${i}`).value,
+                end: document.getElementById(`e${i}`).value
+            };
+        }
+        db.ref('/schedule').set(scheduleData);
+        db.ref('/').update({ manual: false });
+        alert("تم حفظ الجدول الأسبوعي بنجاح!");
+    }
+</script>
+</body>
+</html>
